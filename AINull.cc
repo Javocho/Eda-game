@@ -41,6 +41,9 @@ struct PLAYER_NAME : public Player {
 		}
 	}
 
+
+
+
 	Dir getDirection(const Pos& originalPos, const Pos& newPos) {
 		if (originalPos.i > newPos.i) return Left;
 		if (originalPos.i < newPos.i) return Right;
@@ -71,23 +74,10 @@ struct PLAYER_NAME : public Player {
 
 		while (not Q.empty()) {
 			Pos current = Q.front();
+			Q.pop();
 			Cell c = cell(current);
 			if (c.type == Elevator) return Qdir;
-			Q.pop();
 			
-			/*vector<Pos> neighbors = {
-            	updatePos(current, current.i + 1, 0), //right
-				updatePos(current, current.j + 1, 1), //up
-				updatePos(current, current.i - 1, 0), //left
-				updatePos(current, current.j - 1, 1), //down
-       		 };*/
-
-        	/*for (Pos neighbor : neighbors) {
-            	if (isPassable(neighbor) && not visited[neighbor.i][neighbor.j]) {
-               		Q.push(neighbor);
-                	visited[neighbor.i][neighbor.j] = true;
-            	}
-        	}*/
 			Pos p = updatePos(current, current.i + 1, 0); //right
 			if (isPassable(p) && not visited[p.i][p.j]) {
                		Q.push(p);
@@ -161,8 +151,55 @@ struct PLAYER_NAME : public Player {
         }
         cerr << endl;
     }
+	//0. que se pueda pasar
+	//5 ascensor sin sol?
+	//4. casillas enemigas sin enemigos
+	//3. casillas blancas sin enemigos
+	//2. casillas mías sin enemigos
+	//1. enemigos
+	//-1 por defecto
+	//-2 ascensor con sol o hay alguien
+
+	priority_queue<pair<int, Dir>> invadeCells(const Pos& pos, vector<vector<bool>>& visitedConquering) {
+		priority_queue<pair<int, Dir>> q;
+		for (int i = 0; i < DirSize - 3; ++i) {
+        // Access each direction using the enum values
+        	Dir currentDir = static_cast<Dir>(i);
+			Pos newPos = pos + currentDir;
+			//cerr << newPos << endl;
+			auto p = make_pair(-1, currentDir);
+			if (isPassable(newPos)) {
+				p.first = 0;
+				Cell c = cell(newPos);
+				//if (c.) SI HAY ENEMIGO
+				if (c.owner != me()) {
+					if (c.owner != -1) p.first = 4;
+					else p.first = 3;
+				}
+				/*if (not visitedConquering[newPos.i][newPos.j]) {
+					++p.first;
+					visitedConquering[newPos.i][newPos.j] = true;
+				}*/
+				if (c.type == Elevator and not daylight(newPos)) p.first = 5;
+				else if (c.type == Elevator) p.first = -2;
+				if (c.id != -1) p.first = -2;
+			}
+			q.push(p);
+  		}
+		return q;
+	}
 
 	void move_pioneers() {
+		vector<int> P = pioneers(me());
+		vector<vector<bool>> visitedConquering(40, vector<bool>(80, false));
+		for (int id : P) {
+			Unit u = unit(id);
+			//cerr << invadeCells(u.pos, visitedConquering).top().second << endl;
+			command(id, invadeCells(u.pos, visitedConquering).top().second);
+		}
+	}
+
+	/*void move_pioneers() {
 		vector<int> P = pioneers(me());
 		for (int id : P) {
 			cerr << "id ";
@@ -181,9 +218,9 @@ struct PLAYER_NAME : public Player {
 				if (lpos.empty()) lpos = nearGem(pioneer.pos);
 				else lpos.pop_front();
 				command(id, getDirection(pioneer.pos, lpos.front()));
-			}*/
+			}
 		}
-	}
+	}*/
 
   /**
    * Play method, invoked once per each round.
