@@ -151,7 +151,20 @@ struct PLAYER_NAME : public Player {
         }
         cerr << endl;
     }
+
+	int enemy_near(const Pos &newPos) {
+		int enemies = 0;
+		for (int i = 0; i < DirSize - 3; i++) {
+			Dir currentDir = static_cast<Dir>(i);
+			Pos p = newPos + currentDir;
+			Cell c = cell(p);
+			if (c.id != -1 and c.id != me())
+				enemies--;
+		}
+		return enemies;
+	}
 	//0. que se pueda pasar
+	//6 si está en ascensor y quiere subir (temporal)
 	//5 ascensor sin sol?
 	//4. casillas enemigas sin enemigos
 	//3. casillas blancas sin enemigos
@@ -171,17 +184,17 @@ struct PLAYER_NAME : public Player {
 			if (isPassable(newPos)) {
 				p.first = 0;
 				Cell c = cell(newPos);
-				//if (c.) SI HAY ENEMIGO
 				if (c.owner != me()) {
 					if (c.owner != -1) p.first = 4;
 					else p.first = 3;
 				}
-				/*if (not visitedConquering[newPos.i][newPos.j]) {
+				p.first += enemy_near(newPos);
+				if (not visitedConquering[newPos.i][newPos.j]) { //cómo resuelvo bucles si todo alrededor está visitado??
 					++p.first;
 					visitedConquering[newPos.i][newPos.j] = true;
-				}*/
-				if (c.type == Elevator and not daylight(newPos)) p.first = 5;
-				else if (c.type == Elevator) p.first = -2;
+				}
+				//if (c.type == Elevator and not daylight(newPos)) p.first = 5;
+				/*else */if (c.type == Elevator) p.first = -2;
 				if (c.id != -1) p.first = -2;
 			}
 			q.push(p);
@@ -198,6 +211,25 @@ struct PLAYER_NAME : public Player {
 			command(id, invadeCells(u.pos, visitedConquering).top().second);
 		}
 	}
+
+	/*void bfs_furyans(const Pos& pos) {
+		queue<Pos> Q;
+		vector<vector<bool>> enc(40, vector<bool>(80, false));
+		Q.push(pos);
+		//mirar comentarios whats
+		//al principio crear creo que era pair<Pos, vector<Dir>> y devolver vector<Dir y lista de visitados diferente
+		while (not Q.empty()) {
+
+		}
+	}
+
+	void killPioneers() {
+		vector<int> F = furyans(me());
+		for (int id : F) {
+			Unit u = unit(id);
+		}
+
+	}*/
 
 	/*void move_pioneers() {
 		vector<int> P = pioneers(me());
