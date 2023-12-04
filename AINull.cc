@@ -204,12 +204,51 @@ struct PLAYER_NAME : public Player {
 
 	void move_pioneers() {
 		vector<int> P = pioneers(me());
-		vector<vector<bool>> visitedConquering(40, vector<bool>(80, false));
+		vector<vector<bool>> visitedConquering(40, vector<bool>(80, false)); //set de bools mejor e irlo reseteando de vez en cuando
 		for (int id : P) {
 			Unit u = unit(id);
 			//cerr << invadeCells(u.pos, visitedConquering).top().second << endl;
 			command(id, invadeCells(u.pos, visitedConquering).top().second);
 		}
+	}
+
+	int escape_hellbounds_furians(const Pos& pos) { //probar alrededor de cada hellhound markessi
+		for (int i = 0; i < DirSize - 3; ++i) {
+			Pos newPos = pos + static_cast<Dir>(i);
+			Cell c = cell(newPos);
+			int id = c.id;
+			if (id != -1) {
+				Unit u = unit(id);
+				if (u.type == Hellhound) return 10;
+				if (u.type == Furyan) return 5;
+			}
+		}
+		return 0;
+	}
+
+	priority_queue<pair<int, Dir>> furianos(const Pos& pos, vector<vector<bool>>& visitedConquering) {
+		priority_queue<pair<int, Dir>> q;
+		for (int i = 0; i < DirSize - 3; ++i) {
+        // Access each direction using the enum values
+        	Dir currentDir = static_cast<Dir>(i);
+			Pos newPos = pos + currentDir;
+			//cerr << newPos << endl;
+			auto p = make_pair(1, currentDir);
+			if (isPassable(newPos)) {
+				p.first = 0;
+				Cell c = cell(newPos);
+				p.first -= enemy_near(newPos);
+				if (not visitedConquering[newPos.i][newPos.j]) { //cómo resuelvo bucles si todo alrededor está visitado??
+					++p.first;
+					visitedConquering[newPos.i][newPos.j] = true;
+				}
+				//if (c.type =l= Eevator and not daylight(newPos)) p.first = 5;
+				/*else */if (c.type == Elevator) p.first = -2;
+				if (c.id != -1 and c.id != me()) p.first = 5;
+			}
+			q.push(p);
+  		}
+		return q;
 	}
 
 	/*void bfs_furyans(const Pos& pos) {
@@ -221,17 +260,20 @@ struct PLAYER_NAME : public Player {
 		while (not Q.empty()) {
 
 		}
-	}
+	}*/
 
 	void killPioneers() {
 		vector<int> F = furyans(me());
+		vector<vector<bool>> visitedConquering(40, vector<bool>(80, false));
 		for (int id : F) {
 			Unit u = unit(id);
+			// cerr << "uwu " << furianos(u.pos, visitedConquering).top().second;
+			command(id, furianos(u.pos, visitedConquering).top().second);
 		}
 
-	}*/
-
-	/*void move_pioneers() {
+	}
+/*
+	void move_pioneers() {
 		vector<int> P = pioneers(me());
 		for (int id : P) {
 			cerr << "id ";
@@ -252,13 +294,16 @@ struct PLAYER_NAME : public Player {
 				command(id, getDirection(pioneer.pos, lpos.front()));
 			}
 		}
-	}*/
+	}
+
+	*/
 
   /**
    * Play method, invoked once per each round.
    */
   virtual void play () {
 	move_pioneers();
+	killPioneers();
   }
 
 };
