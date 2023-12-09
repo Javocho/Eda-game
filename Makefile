@@ -26,7 +26,7 @@ PLAYERS_OBJ = $(patsubst %.cc, %.o, $(PLAYERS_SRC)) $(EXTRA_OBJ) $(DUMMY_OBJ) $(
 
 # Rules
 
-OBJ = Structs.o Settings.o State.o Info.o Random.o Board.o Action.o Player.o Registry.o Utils.o AIUnrealV3.o
+OBJ = Structs.o Settings.o State.o Info.o Random.o Board.o Action.o Player.o Registry.o Utils.o AIUnrealV3.o AIGUIDOV8.o
 
 all: Game
 

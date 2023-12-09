@@ -40,7 +40,7 @@ struct PLAYER_NAME : public Player {
 		return distB;
 	}
 
-	bool imBeingStalked(Pos p, Unit &u2) { //bfs y probar con los dos? si hay hellhound y furian que escape de hellhound si los dos a poca distancia
+	bool imBeingStalked(Pos p, Unit &u2) {
 		vector<int> H = hellhounds();
 
 		double dist_hellhound = 1000;
@@ -51,7 +51,7 @@ struct PLAYER_NAME : public Player {
 			if (distance(p, u.pos) < sqrt(32))
 			{
 				u2 = u;
-				cerr << distance(p, u.pos);
+				//cerr << distance(p, u.pos);
 				//return true;
 				dist_hellhound = distance(p, u.pos);
 				hellhoundFound = true;
@@ -63,9 +63,9 @@ struct PLAYER_NAME : public Player {
 			vector<int> F = furyans(i);
 			for (int id : F) {
 				u = unit(id);
-				if (distance(u.pos, p) < sqrt(18)) {
+				if (distance(u.pos, p) < sqrt(18)) { 
 					//return true;
-					if (distance(u.pos, p) < dist_hellhound - sqrt(2)) {
+					if (distance(u.pos, p) < dist_hellhound - sqrt(3)) { //Antes 2
 						u2 = u;
 						return true;
 					}
@@ -76,20 +76,70 @@ struct PLAYER_NAME : public Player {
 		return false;
 	}
 
+	// bool imBeingStalked(Pos p, Unit &u2) { //bfs y probar con los dos? si hay hellhound y furian que escape de hellhound si los dos a poca distancia
+	// 	set<Pos> visited;
+	// 	queue<Pos> Q;
+	// 	Q.push(p);
+	// 	visited.insert(p);
+	// 	while (not Q.empty()) {
+	// 		Pos posInitial = Q.front();
+	// 		Q.pop();
+
+	// 		double dist_hellhound = 1000;
+	// 		Unit u;
+	// 		bool hellhoundFound = false;
+	// 		for (int i = 0; i < DirSize - 3; i++) {
+	// 			Dir currentDir = static_cast<Dir>(i);
+	// 			Pos ptmp = posInitial+currentDir;
+	// 			if (isPassable(ptmp) and visited.find(ptmp) == visited.end()) {
+    //             	visited.insert(ptmp);
+    //             	Q.push(ptmp);
+    //         	}
+	// 			Cell c = cell(ptmp);
+	// 			Unit utmp;
+	// 			if (c.id != -1) {
+	// 				utmp = unit(c.id);
+	// 				if (utmp.type == Hellhound and distance(p, utmp.pos) < sqrt(32)) {
+	// 					u2 = u;
+	// 					dist_hellhound = distance(p, u.pos);
+	// 					hellhoundFound = true;
+	// 				}
+	// 				else if (utmp.type == Furyan and utmp.player != me()) {
+	// 					if (distance(u.pos, p) < sqrt(18)) {
+	// 						if (distance(u.pos, p) < dist_hellhound - sqrt(2)) {
+	// 							u2 = u;
+	// 							return true;
+	// 						}
+	// 					}
+	// 				}
+	// 			}
+	// 		}
+	// 		if (hellhoundFound) return true;
+	// 	}
+	// 	return false;
+	// }
 
 
 	Dir huir(Pos InitialPos, Pos enemyPos) { //igual priority, como antes // repasarlas
 		int dist = 0;
 		Dir best = None;
+		//bool danger = true;
 		for (int i = 0; i < DirSize - 3; i++) {
 			Dir dir = static_cast<Dir>(i);
 			Pos newPos = InitialPos + dir; 
 			Cell c1 = cell(newPos);
 			if (isPassable(newPos) and c1.id == -1) {
+				Unit utmp;
 				if (distance(newPos, enemyPos) > dist) {
-					dist = distance(newPos, enemyPos);
-					best = dir;
+						dist = distance(newPos, enemyPos);
+						best = dir;
+						//danger = imBeingStalked(newPos, utmp);
 				}
+				// else if (distance(newPos, enemyPos) == dist and danger) {
+				// 	dist = distance(newPos, enemyPos);
+				// 	best = dir;
+				// 	danger = imBeingStalked(newPos, utmp);
+				// }
 			}
 		}
 		return best;
@@ -106,13 +156,21 @@ struct PLAYER_NAME : public Player {
 	Dir best_dir(const Pos& posInitial, const Pos& posFinal) {
 		Dir best = None;
 		int dist = distance(posInitial, posFinal);
+		bool stalked = true;
 		for (int i = 0; i < DirSize - 3; ++i) {
             Dir currentDir = static_cast<Dir>(i);
 			Pos ptmp = posInitial+currentDir;
+			Unit utmp;
 			if (isPassable(ptmp) and distance(ptmp, posFinal) < dist) {
 				dist = distance(ptmp, posFinal);
 				best = currentDir;
+				stalked = imBeingStalked(ptmp, utmp);
 			} 
+			else if (isPassable(ptmp) and distance(ptmp, posFinal) == dist and stalked) {
+				dist = distance(ptmp, posFinal);
+				best = currentDir;
+				stalked = imBeingStalked(ptmp, utmp);
+			}
 		}
 		return best;
 	}
@@ -164,8 +222,8 @@ struct PLAYER_NAME : public Player {
 			Cell c = cell(currentPos);
 			if (c.id != -1 and c.id != me()) {
 				Unit u = unit(c.id);
-				if (u.type == Pioneer) return currentPos;
-				else if (u.type == Furyan and health > u.health) return currentPos;
+				if (u.type == Furyan and health > u.health) return currentPos;
+				else if (u.type == Pioneer) return currentPos;
 			}
 			for (int i = 0; i < DirSize - 3; ++i) {
             	Dir currentDir = static_cast<Dir>(i);
@@ -179,6 +237,8 @@ struct PLAYER_NAME : public Player {
 		}
 		return p;
 	}
+
+
 
 
 	void move_furyans() {
