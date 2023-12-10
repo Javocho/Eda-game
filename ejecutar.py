@@ -2,10 +2,9 @@ import subprocess
 import random
 import re
 
-semilla = random.randint(40, 200)
-
 def ejecutar_juego(i):
     semilla = random.randint(40, 200)
+    print(semilla)
     comando = f"./Game Dummy Dummy Dummy Presi -s {semilla} -i default.cnf -o default.res{i}"
     resultado = subprocess.run(comando, shell=True, capture_output=True, text=True)
     return resultado.stderr
@@ -15,8 +14,10 @@ def obtener_puntuaciones_jugadores(salida):
     puntuaciones = re.findall(patron_puntuacion, salida, re.MULTILINE)
     return puntuaciones
 
-def procesar_puntuaciones(puntuaciones):
+def procesar_puntuaciones(puntuaciones, i):
+    if not puntuaciones: return {}
     estadisticas = {}
+    
     max_puntuacion = max(int(p[1]) for p in puntuaciones)
     for jugador, puntuacion in puntuaciones:
         if jugador not in estadisticas:
@@ -26,14 +27,10 @@ def procesar_puntuaciones(puntuaciones):
         if puntuacion_int == max_puntuacion:
             estadisticas[jugador]["victorias"] += 1
             print(f"Jugador {jugador} ha ganado con {puntuacion_int} puntos")
-            if jugador == "Dummy":
-                with open("semillas_fallidas.txt", 'a') as archivo:
-                    archivo.write(str(semilla)+'\n')
         else: 
             estadisticas[jugador]["diferencias"].append(max_puntuacion - puntuacion_int)
 
     return estadisticas
-
 
 iteraciones = int(input("Numero de iteraciones: \n"))
 estadisticas_totales = {}
@@ -41,7 +38,7 @@ estadisticas_totales = {}
 for i in range(iteraciones):
     salida = ejecutar_juego(i)
     puntuaciones = obtener_puntuaciones_jugadores(salida)
-    estadisticas = procesar_puntuaciones(puntuaciones)
+    estadisticas = procesar_puntuaciones(puntuaciones, i)
     
     for jugador in estadisticas:
         if jugador not in estadisticas_totales:

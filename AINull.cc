@@ -29,7 +29,7 @@ struct PLAYER_NAME : public Player {
 	// Function to check if a cell at the given position is passable.
 	bool isPassable(const Pos& p) {
    		Cell c = cell(p);
-		return  (pos_ok(p) && c.type != Rock);
+		return  (pos_ok(p) and c.type != Rock);
 		return false;
 	}
 	
@@ -123,23 +123,24 @@ struct PLAYER_NAME : public Player {
 	Dir huir(Pos InitialPos, Pos enemyPos) { //igual priority, como antes // repasarlas
 		int dist = 0;
 		Dir best = None;
-		//bool danger = true;
 		for (int i = 0; i < DirSize - 3; i++) {
 			Dir dir = static_cast<Dir>(i);
 			Pos newPos = InitialPos + dir; 
 			Cell c1 = cell(newPos);
+			Unit u2;
+			bool stalked;
+			if (imBeingStalked(newPos, u2)) stalked = true;
+			else stalked = false;
 			if (isPassable(newPos) and c1.id == -1) {
 				Unit utmp;
-				if (distance(newPos, enemyPos) > dist) {
+				if (distance(newPos, enemyPos) >= dist and not stalked) {
 						dist = distance(newPos, enemyPos);
 						best = dir;
-						//danger = imBeingStalked(newPos, utmp);
 				}
-				// else if (distance(newPos, enemyPos) == dist and danger) {
-				// 	dist = distance(newPos, enemyPos);
-				// 	best = dir;
-				// 	danger = imBeingStalked(newPos, utmp);
-				// }
+				else if (distance(newPos, enemyPos) > dist) {
+					dist = distance(newPos, enemyPos);
+					best = dir;
+				}
 			}
 		}
 		return best;
@@ -175,6 +176,29 @@ struct PLAYER_NAME : public Player {
 		return best;
 	}
 
+	// Pos findExit(Pos p) {
+	// 	set<Pos> visited;
+	// 	queue<Pos> Q;
+	// 	Q.push(p);
+	// 	while (not Q.empty()) {
+	// 		Pos currentPos = Q.front();
+	// 		Q.pop();
+	// 		Cell c = cell(currentPos);
+	// 		if (isPassable(currentPos) and c.id == -1 and c.owner != me() and c.type != Elevator)
+	// 			return currentPos;
+	// 		for (int i = 0; i < DirSize - 3; ++i) {
+    //         	Dir currentDir = static_cast<Dir>(i);
+    //         	Pos neighborPos = currentPos + currentDir;
+
+    //         	if (isPassable(neighborPos) and visited.find(neighborPos) == visited.end()) {
+    //             	visited.insert(neighborPos);
+    //             	Q.push(neighborPos);
+    //         	}
+    //     	}
+	// 	}
+	// 	return p; //encontrar salida
+//	}
+	
 	Pos invadeCells(Pos p) {
 		set<Pos> visited;
 		queue<Pos> Q;
@@ -183,7 +207,7 @@ struct PLAYER_NAME : public Player {
 			Pos currentPos = Q.front();
 			Q.pop();
 			Cell c = cell(currentPos);
-			if (isPassable(currentPos) and c.id == -1 and c.owner != me() and c.type != Elevator)
+			if (isPassable(currentPos) and c.owner != me() and c.id == -1 and c.type != Elevator)
 				return currentPos;
 			for (int i = 0; i < DirSize - 3; ++i) {
             	Dir currentDir = static_cast<Dir>(i);
@@ -195,8 +219,41 @@ struct PLAYER_NAME : public Player {
             	}
         	}
 		}
-		return p;
+		return p; //encontrar salida
 	}
+
+	// Pos searchElevator(Pos p) {
+	// 	set<Pos> visited;
+	// 	queue<Pos> Q;
+	// 	Q.push(p);
+
+	// 	while (not Q.empty()) {
+	// 		Pos pCurrent = Q.front();
+	// 		Q.pop();
+	// 		Cell c = cell(pCurrent);
+	// 		if (c.type == Elevator) return p;
+
+	// 	}
+
+		
+	// }
+
+	// Pos search_gem; {
+
+	// }
+
+	// bool sun_danger(Pos p) {
+	// 	safeBegin = 0;
+	// 	safeEnd = 40;
+	// 	for (int i = 0; i < round(); i++) {
+	// 		safeBegin+=2;
+	// 		safeEnd +=2;
+	// 		if (safeBegin == 80) safeBegin = 0;
+	// 		if (safeEnd == 80) safeEnd = 0;
+	// 	}
+	// 	if ((p > safeBegin and p < safeEnd) or (p < safeBegin and p > safeEnd)) return false;
+	// 	return true;
+	// }
 
 	void move_pioneers() {
 		vector<int> P = pioneers(me());
@@ -247,7 +304,6 @@ struct PLAYER_NAME : public Player {
 			Unit u = unit(id);
 			Unit u2;
 			if (imBeingStalked(u.pos, u2)) {
-				cerr << "perseguido" << endl;
 				if (u2.type == Hellhound) command(id, huir(u.pos, u2.pos));
 				else if (u2.type == Furyan and u2.health > u.health) command(id, huir(u.pos, u2.pos));
 				else if (u2.type == Furyan) {
@@ -257,7 +313,6 @@ struct PLAYER_NAME : public Player {
 			else {
 				Pos pfinal = kill_pioneers(u.pos, u.health);
 				Dir dir = best_dir(u.pos, pfinal);
-				cerr << "bestdir " << dir << endl;
 				command(id, dir);
 			}
 		}
