@@ -14,7 +14,7 @@ struct PLAYER_NAME : public Player {
 
   /**
    * Factory: returns a new instance of this class.
-   * Do not modify this function.
+   * Do not modify this function. 1235
    */
   static Player* factory () {
     return new PLAYER_NAME;
@@ -76,7 +76,7 @@ struct PLAYER_NAME : public Player {
 		return false;
 	}
 
-	// bool imBeingStalked(Pos p, Unit &u2) { //bfs y probar con los dos? si hay hellhound y furian que escape de hellhound si los dos a poca distancia
+	// bool imBeingStalked(Pos p, Unit &u2) {
 	// 	set<Pos> visited;
 	// 	queue<Pos> Q;
 	// 	Q.push(p);
@@ -94,21 +94,21 @@ struct PLAYER_NAME : public Player {
 	// 			if (isPassable(ptmp) and visited.find(ptmp) == visited.end()) {
     //             	visited.insert(ptmp);
     //             	Q.push(ptmp);
-    //         	}
-	// 			Cell c = cell(ptmp);
-	// 			Unit utmp;
-	// 			if (c.id != -1) {
-	// 				utmp = unit(c.id);
-	// 				if (utmp.type == Hellhound and distance(p, utmp.pos) < sqrt(32)) {
-	// 					u2 = u;
-	// 					dist_hellhound = distance(p, u.pos);
-	// 					hellhoundFound = true;
-	// 				}
-	// 				else if (utmp.type == Furyan and utmp.player != me()) {
-	// 					if (distance(u.pos, p) < sqrt(18)) {
-	// 						if (distance(u.pos, p) < dist_hellhound - sqrt(2)) {
-	// 							u2 = u;
-	// 							return true;
+	// 				Cell c = cell(ptmp);
+	// 				Unit utmp;
+	// 				if (c.id != -1) {
+	// 					utmp = unit(c.id);
+	// 					if (utmp.type == Hellhound and distance(p, utmp.pos) < sqrt(32)) {
+	// 						u2 = u;
+	// 						dist_hellhound = distance(p, u.pos);
+	// 						hellhoundFound = true;
+	// 					}
+	// 					else if (utmp.type == Furyan and utmp.player != me()) {
+	// 						if (distance(u.pos, p) < sqrt(18)) {
+	// 							if (distance(u.pos, p) < dist_hellhound - sqrt(2)) {
+	// 								u2 = u;
+	// 								return true;
+	// 							}
 	// 						}
 	// 					}
 	// 				}
@@ -264,6 +264,8 @@ struct PLAYER_NAME : public Player {
 				command(id, huir(u.pos, u2.pos));
 			else {
 				Pos ptmp = invadeCells(u.pos);
+				cout << round() << ' ';
+				cout << ptmp.i << ' ' << ptmp.j << endl;
 				command(id, best_dir(u.pos, ptmp));
 			}
 		}
@@ -295,25 +297,78 @@ struct PLAYER_NAME : public Player {
 		return p;
 	}
 
+Pos kill_furyans(Pos p, int health) {
+	set<Pos> visited;
+	queue<Pos> Q;
+	Q.push(p);
+	while (not Q.empty()) {
+		Pos currentPos = Q.front();
+		Q.pop();
+		Cell c = cell(currentPos);
+		if (c.id != -1 and c.id != me()) {
+			Unit u = unit(c.id);
+			if (u.type == Furyan and health > u.health) return currentPos;
+			else if (u.type == Pioneer) return currentPos;
+		}
+		for (int i = 0; i < DirSize - 3; ++i) {
+			Dir currentDir = static_cast<Dir>(i);
+			Pos neighborPos = currentPos + currentDir;
 
+			if (isPassable(neighborPos) && visited.find(neighborPos) == visited.end()) {
+				visited.insert(neighborPos);
+				Q.push(neighborPos);
+			}
+		}
+	}
+	return p;
+}
 
+	Pos hellhoundNear(Pos p) {
+		set<Pos> visited;
+		queue<Pos> Q;
+		Q.push(p);
+		while (not Q.empty()) {
+			Pos currentPos = Q.front();
+			Q.pop();
+			Cell c = cell(currentPos);
+			if (c.id != -1 and c.id != me()) {
+				Unit u = unit(c.id);
+				if (u.type == Hellhound) return currentPos;
+			}
+			for (int i = 0; i < DirSize - 3; ++i) {
+				Dir currentDir = static_cast<Dir>(i);
+				Pos neighborPos = currentPos + currentDir;
+
+				if (isPassable(neighborPos) && visited.find(neighborPos) == visited.end()) {
+					visited.insert(neighborPos);
+					Q.push(neighborPos);
+				}
+			}
+		}
+			return p;
+	}
 
 	void move_furyans() {
 		vector<int> F = furyans(me());
 		for (int id : F) {
 			Unit u = unit(id);
 			Unit u2;
-			if (imBeingStalked(u.pos, u2)) {
-				if (u2.type == Hellhound) command(id, huir(u.pos, u2.pos));
-				else if (u2.type == Furyan and u2.health > u.health) command(id, huir(u.pos, u2.pos));
-				else if (u2.type == Furyan) {
-					command(id, best_dir(u.pos, u2.pos));
-				}
-			}
+
+			Pos hellNear = hellhoundNear(u.pos);
+			if (hellNear != u.pos and distance(hellNear, u.pos) < sqrt(32)) command(id, huir(u.pos, hellNear));
 			else {
-				Pos pfinal = kill_pioneers(u.pos, u.health);
-				Dir dir = best_dir(u.pos, pfinal);
-				command(id, dir);
+				if (imBeingStalked(u.pos, u2)) {
+					if (u2.type == Hellhound) command(id, huir(u.pos, u2.pos));
+					else if (u2.type == Furyan and u2.health > u.health) command(id, huir(u.pos, u2.pos));
+					else if (u2.type == Furyan) {
+						command(id, best_dir(u.pos, u2.pos));
+					}
+				}
+				else {
+					Pos pfinal = kill_pioneers(u.pos, u.health);
+					Dir dir = best_dir(u.pos, pfinal);
+					command(id, dir);
+				}
 			}
 		}
 	}
