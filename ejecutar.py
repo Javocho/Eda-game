@@ -3,9 +3,9 @@ import random
 import re
 
 def ejecutar_juego(i):
-    semilla = random.randint(40, 200)
+    semilla = random.randint(1, 2000)
     print(semilla)
-    comando = f"./Game Dummy Dummy Dummy Presi -s {semilla} -i default.cnf -o default.res{i}"
+    comando = f"./Game Dummy Dummy Dummy CLTpresi -s {semilla} -i default.cnf -o default.res{i}"
     resultado = subprocess.run(comando, shell=True, capture_output=True, text=True)
     return resultado.stderr
 

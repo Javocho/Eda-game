@@ -7,7 +7,7 @@
  * Write the name of your player and save this file
  * with the same name and .cc extension.
  */
-#define PLAYER_NAME Presi
+#define PLAYER_NAME CLTpresi
 
 
 struct PLAYER_NAME : public Player {
@@ -25,6 +25,8 @@ struct PLAYER_NAME : public Player {
    */
 	typedef vector<vector<char>> Matrix;
 	map<int, queue<Dir>> pioneerPaths;
+	Pos lastPosF;
+	Pos lastPosP;
 	
 	// Function to check if a cell at the given position is passable.
 	bool isPassable(const Pos& p) {
@@ -34,6 +36,7 @@ struct PLAYER_NAME : public Player {
 	}
 	
 	double distance (Pos p1, Pos p2) {
+		if (p1.k != p2.k) return 10000;
 		double distA = sqrt(pow(p2.i-p1.i,2)+pow(p1.j-p2.j,2));
 		double distB = sqrt(pow(80 - abs(p1.j - p2.j), 2) + pow(p1.i - p2.i, 2));
 		if (distA < distB) return distA;
@@ -260,6 +263,7 @@ struct PLAYER_NAME : public Player {
 		for (int id : P) {
 			Unit u = unit(id);
 			Unit u2;
+			lastPosP = u.pos;
 			if (imBeingStalked(u.pos, u2))
 				command(id, huir(u.pos, u2.pos));
 			else {
@@ -268,6 +272,7 @@ struct PLAYER_NAME : public Player {
 				cout << ptmp.i << ' ' << ptmp.j << endl;
 				command(id, best_dir(u.pos, ptmp));
 			}
+			if (lastPosP == u.pos) command(id, best_dir(u.pos, invadeCells(u.pos)));
 		}
 	}
 
@@ -281,8 +286,8 @@ struct PLAYER_NAME : public Player {
 			Cell c = cell(currentPos);
 			if (c.id != -1 and c.id != me()) {
 				Unit u = unit(c.id);
-				if (u.type == Furyan and health > u.health) return currentPos;
-				else if (u.type == Pioneer) return currentPos;
+				if (u.type == Furyan and u.player != me() and health > u.health) return currentPos;
+				else if (u.type == Pioneer and u.player != me()) return currentPos;
 			}
 			for (int i = 0; i < DirSize - 3; ++i) {
             	Dir currentDir = static_cast<Dir>(i);
@@ -354,6 +359,7 @@ Pos kill_furyans(Pos p, int health) {
 			Unit u = unit(id);
 			Unit u2;
 
+			lastPosF = u.pos;
 			Pos hellNear = hellhoundNear(u.pos);
 			if (hellNear != u.pos and distance(hellNear, u.pos) < sqrt(32)) command(id, huir(u.pos, hellNear));
 			else {
@@ -370,6 +376,7 @@ Pos kill_furyans(Pos p, int health) {
 					command(id, dir);
 				}
 			}
+			if (lastPosF == u.pos) command(id, best_dir(u.pos, invadeCells(u.pos)));
 		}
 	}
 
