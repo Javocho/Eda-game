@@ -7,7 +7,7 @@
  * Write the name of your player and save this file
  * with the same name and .cc extension.
  */
-#define PLAYER_NAME CLTpresi
+#define PLAYER_NAME CLT_Presi_v2
 
 
 struct PLAYER_NAME : public Player {
